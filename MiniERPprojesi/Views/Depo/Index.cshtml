@@ -1,0 +1,217 @@
+﻿@using MiniERPprojesi.Models
+@model List<v_depolar>
+
+@{
+    ViewBag.Title = "Depolar";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Depolar</h2>
+
+<button class="btn btn-info mb-3" onclick="TemizleForm(); $('#depoModalLabel').text('Yeni Depo Ekle'); $('#depoModal').modal('show');">Yeni Depo Ekle</button>
+
+<table class="table table-bordered table-striped mt-3">
+    <thead>
+        <tr>
+            <th>Depo ID</th>
+            <th>Depo Adı</th>
+            <th>İl</th>
+            <th>İlçe</th>
+            <th>Adres</th>
+            <th>Oluşturan Kullanıcı</th>
+            <th>Sil</th>
+            <th>Güncelle</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var d in Model)
+        {
+            <tr>
+                <td>@d.DepoID</td>
+                <td>@d.DepoAdi</td>
+                <td>@d.IlAdi</td>
+                <td>@d.IlceAdi</td>
+                <td>@d.Adres</td>
+                <td>@d.KullaniciAdi</td>
+                <td><a href="#" class="btn btn-danger depoSil" data-id="@d.DepoID" data-ad="@d.DepoAdi">Sil</a></td>
+                <td><a href="#" class="btn btn-warning depoGuncelle" data-id="@d.DepoID">Güncelle</a></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section body {
+    <!-- Depo Modal -->
+    <div class="modal fade" id="depoModal" tabindex="-1" role="dialog" aria-labelledby="depoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-info">
+                    <h4 class="modal-title text-white" id="depoModalLabel">Depo Bilgileri</h4>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="guncelleDepoID" />
+                    <input type="hidden" id="adresID" />
+                    <div class="form-group"><label>Depo Adı:</label><input type="text" id="depoAdi" class="form-control" /></div>
+                    <div class="form-group">
+                        <label>İl:</label>
+                        <select id="ilID" class="form-control">
+                            <option value="">İl Seçiniz</option>
+                            @foreach (var il in ViewBag.iller)
+                            {
+                                <option value="@il.IlID">@il.IlAdi</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group"><label>İlçe:</label><select id="ilceID" class="form-control"><option value="">İlçe Seçiniz</option></select></div>
+                    <div class="form-group"><label>Mahalle:</label><input type="text" id="mahalle" class="form-control" /></div>
+                    <div class="form-group"><label>Sokak:</label><input type="text" id="sokak" class="form-control" /></div>
+                    <div class="form-group"><label>Bina No:</label><input type="text" id="binaNo" class="form-control" /></div>
+                    <div class="form-group"><label>Daire No:</label><input type="text" id="daireNo" class="form-control" /></div>
+                    <div class="form-group"><label>Posta Kodu:</label><input type="text" id="postaKodu" class="form-control" /></div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-success" onclick="DepoKaydet()">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sil Modal -->
+    <div class="modal fade" id="silModal" tabindex="-1" role="dialog" aria-labelledby="silModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger">
+                    <h4 class="modal-title text-white" id="silModalLabel">Silme Onayı</h4>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p><strong id="silDepoAdi" class="text-danger"></strong> isimli depoyu silmek istediğinize emin misiniz?</p>
+                    <input type="hidden" id="silDepoID" />
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-danger" id="btnSilOnayla">Evet, Sil</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function IlceYukle(ilID, selectedIlceID = null) {
+            $.get("/Depo/IlceleriGetir", { ilID: ilID }, function (data) {
+                $("#ilceID").empty().append('<option value="">İlçe Seçiniz</option>');
+                $.each(data, function (i, ilce) {
+                    const selected = (selectedIlceID == ilce.IlceID) ? 'selected' : '';
+                    $("#ilceID").append('<option value="' + ilce.IlceID + '" ' + selected + '>' + ilce.IlceAdi + '</option>');
+                });
+            });
+        }
+
+        function TemizleForm() {
+            $("#guncelleDepoID").val("");
+            $("#adresID").val("");
+            $("#depoAdi").val("");
+            $("#ilID").val("");
+            $("#ilceID").empty().append('<option value="">İlçe Seçiniz</option>');
+            $("#mahalle").val("");
+            $("#sokak").val("");
+            $("#binaNo").val("");
+            $("#daireNo").val("");
+            $("#postaKodu").val("");
+        }
+
+        $("#ilID").change(function () {
+            IlceYukle($(this).val());
+        });
+
+        function DepoKaydet() {
+            // Önce tüm eski hata durumlarını temizle
+            $(".is-invalid").removeClass("is-invalid");
+
+
+            if ($("#depoAdi").val().trim() === "" ||
+                $("#ilID").val().trim() === "" ||
+                $("#ilceID").val().trim() === "" ||
+                $("#mahalle").val().trim() === "" ||
+                $("#sokak").val().trim() === "" ||
+                $("#binaNo").val().trim() === "" ||
+                $("#postaKodu").val().trim() === "") {
+                alert("Lütfen tüm zorunlu alanları doldurunuz.");
+                return; // Kaydı durdur
+            }
+
+
+            $.ajax({
+                type: "POST",
+                url: "/Depo/Ekle",
+                data: {
+                    DepoID: $("#guncelleDepoID").val(),
+                    DepoAdi: $("#depoAdi").val(),
+                    AdresID: $("#adresID").val(),
+                    "a.IlceID": $("#ilceID").val(),
+                    "a.Mahalle": $("#mahalle").val(),
+                    "a.Sokak": $("#sokak").val(),
+                    "a.BinaNo": $("#binaNo").val(),
+                    "a.DaireNo": $("#daireNo").val(),
+                    "a.PostaKodu": $("#postaKodu").val()
+                },
+                success: function (durum) {
+                    if (durum == 0) {
+                        $("#depoModal").modal("hide");
+                        alert("İşlem başarılı.");
+                        location.reload();
+                    } else {
+                        alert("İşlem sırasında hata oluştu.");
+                    }
+                }
+            });
+        }
+
+        $(".depoSil").click(function () {
+            var id = $(this).data("id");
+            var ad = $(this).data("ad");
+            $("#silDepoID").val(id);
+            $("#silDepoAdi").text(ad);
+            $("#silModal").modal("show");
+        });
+
+        $("#btnSilOnayla").click(function () {
+            var id = $("#silDepoID").val();
+            $.post("/Depo/Sil/" + id, function (durum) {
+                if (durum == 0) {
+                    $("#silModal").modal("hide");
+                    alert("Depo silindi.");
+                    location.reload();
+                } else {
+                    alert("Silme işlemi başarısız.");
+                }
+            });
+        });
+
+        $(document).on("click", ".depoGuncelle", function () {
+            var id = $(this).data("id");
+            $.get("/Depo/DepoGetir/" + id, function (depo) {
+                $("#guncelleDepoID").val(depo.DepoID);
+                $("#adresID").val(depo.AdresID);
+                $("#depoAdi").val(depo.DepoAdi);
+                $("#mahalle").val(depo.Adres.Mahalle);
+                $("#sokak").val(depo.Adres.Sokak);
+                $("#binaNo").val(depo.Adres.BinaNo);
+                $("#daireNo").val(depo.Adres.DaireNo);
+                $("#postaKodu").val(depo.Adres.PostaKodu);
+                $("#ilID").val(depo.Adres.IlID);
+                IlceYukle(depo.Adres.IlID, depo.Adres.IlceID);
+                $("#depoModalLabel").text("Depo Güncelle");
+                $("#depoModal").modal("show");
+            });
+        });
+    </script>
+}

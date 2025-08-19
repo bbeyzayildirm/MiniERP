@@ -1,0 +1,126 @@
+﻿@using MiniERPprojesi.Models
+@model List<v_stokhareketleri>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Stok Hareketleri";
+}
+
+<style>
+    .badge-custom {
+        font-size: 0.85rem;
+        padding: 4px 10px;
+        font-weight: 500;
+        border-radius: 0.4rem;
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    .badge-lacivert {
+        background-color: #003d80;
+        color: white;
+    }
+
+    .badge-acikgri {
+        background-color: #e0e0e0;
+        color: #333;
+    }
+
+    td.text-center-cell {
+        text-align: center !important;
+    }
+</style>
+
+<section class="content-header">
+    <div class="container-fluid">
+        <h2>Stok Hareketleri</h2>
+        <form method="get" action="/StokHareketleri/Index" class="form-inline mb-3">
+            <div class="form-group mr-3">
+                <label for="hareketTipi" class="mr-2 font-weight-bold">Hareket Tipi:</label>
+                <select id="hareketTipi" name="hareketTipi" class="form-control">
+                    <option value="" @(ViewBag.SeciliTip == null ? "selected" : "")>Tümünü Göster</option>
+                    <option value="1" @(ViewBag.SeciliTip != null && (int)ViewBag.SeciliTip == 1 ? "selected" : "")>Giriş</option>
+                    <option value="2" @(ViewBag.SeciliTip != null && (int)ViewBag.SeciliTip == 2 ? "selected" : "")>Çıkış</option>
+                </select>
+            </div>
+
+            <div class="form-group mr-3">
+                <label for="depoId" class="mr-2 font-weight-bold">Depo:</label>
+                <select id="depoId" name="depoId" class="form-control">
+                    <option value="">Tümünü Göster</option>
+                    @foreach (var depo in ViewBag.Depolar as List<SelectListItem>)
+                    {
+                        <option value="@depo.Value" @(ViewBag.SeciliDepo != null && depo.Value == ViewBag.SeciliDepo.ToString() ? "selected" : "")>
+                            @depo.Text
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <button class="btn text-white" style="background-color: #003d80;">Filtrele</button>
+        </form>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <table class="table table-bordered table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Depo</th>
+                    <th>Ürün</th>
+                    <th>Miktar</th>
+                    <th>Birim Fiyat</th>
+                    <th>Toplam</th>
+                    <th class="text-center-cell">Hareket Tipi</th>
+                    <th class="text-center-cell">İptal Kaynaklı</th>
+                    <th>Tarih</th>
+                    <th>Kullanıcı</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var h in Model)
+                {
+                    <tr>
+                        <td>@h.DepoAdi</td>
+                        <td>@h.UrunAdi</td>
+                        <td>@h.Miktar</td>
+                        <td>@h.BirimFiyat ₺</td>
+                        <td>@(h.Miktar * h.BirimFiyat) ₺</td>
+
+                        <!-- Giriş / Çıkış -->
+                        <td class="text-center-cell">
+                            @if (h.HareketTipi == 1)
+                            {
+                                <span class="badge badge-success badge-custom">Giriş</span>
+                            }
+                            else if (h.HareketTipi == 2)
+                            {
+                                <span class="badge badge-danger badge-custom">Çıkış</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary badge-custom">Bilinmiyor</span>
+                            }
+                        </td>
+
+                        <!-- İptal Kaynaklı -->
+                        <td class="text-center-cell">
+                            @if (h.IptalKaynakli == true)
+                            {
+                                <span class="badge badge-lacivert badge-custom">Evet</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-acikgri badge-custom">Hayır</span>
+                            }
+                        </td>
+
+                        <td>@h.HareketTarihi.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@h.KullaniciAdi</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

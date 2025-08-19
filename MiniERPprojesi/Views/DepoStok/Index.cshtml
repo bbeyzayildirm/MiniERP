@@ -1,0 +1,147 @@
+﻿@using MiniERPprojesi.Models
+@model List<DepoStok>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Depo Stok Durumu";
+}
+
+<section class="content-header">
+    <div class="container-fluid">
+        <form method="get" action="/DepoStok/Index" class="form-inline mb-3">
+            <label class="mr-2">Depo:</label>
+            <select name="depoID" class="form-control mr-3">
+                <option value="">Tüm Depolar</option>
+                @foreach (var d in ViewBag.Depolar as List<Depolar>)
+                {
+                    <option value="@d.DepoID" @(ViewBag.SeciliDepo != null && d.DepoID == (int)ViewBag.SeciliDepo ? "selected" : "")>
+                        @d.DepoAdi
+                    </option>
+                }
+            </select>
+
+            <label class="mr-2">Ürün:</label>
+            <select name="urunID" class="form-control mr-3">
+                <option value="">Tüm Ürünler</option>
+                @foreach (var u in ViewBag.Urunler as List<Urunler>)
+                {
+                    <option value="@u.UrunID" @(ViewBag.SeciliUrun != null && u.UrunID == (int)ViewBag.SeciliUrun ? "selected" : "")>
+                        @u.UrunAdi
+                    </option>
+                }
+            </select>
+
+            <button class="btn text-white" style="background-color: #003d80;">Filtrele</button>
+
+
+        </form>
+
+
+        <h2>Depo Stok</h2>
+        <button class="btn btn-info" data-toggle="modal" data-target="#stokModal" onclick="TemizleForm();">Yeni Ürün Girişi</button>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <table class="table table-bordered table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Depo</th>
+                    <th>Ürün</th>
+                    <th>Miktar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model)
+                {
+                    <tr>
+                        <td>@s.Depolar.DepoAdi</td>
+                        <td>@s.Urunler.UrunAdi</td>
+                        <td>@s.Miktar</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- Ürün Girişi Modal -->
+<div class="modal fade" id="stokModal" tabindex="-1" role="dialog" aria-labelledby="stokModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="stokModalLabel">Ürün Girişi</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Depo:</label>
+                    <select id="depoID" class="form-control">
+                        <option value="">Seçiniz</option>
+                        @foreach (var d in ViewBag.Depolar as List<Depolar>)
+                        {
+                            <option value="@d.DepoID">@d.DepoAdi</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Ürün:</label>
+                    <select id="urunID" class="form-control">
+                        <option value="">Seçiniz</option>
+                        @foreach (var u in ViewBag.Urunler as List<Urunler>)
+                        {
+                            <option value="@u.UrunID">@u.UrunAdi</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Miktar:</label>
+                    <input type="number" id="miktar" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label>Birim Fiyat:</label>
+                    <input type="number" id="birimFiyat" class="form-control" />
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-success" onclick="UrunKaydet()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function TemizleForm() {
+            $("#depoID").val("");
+            $("#urunID").val("");
+            $("#miktar").val("");
+            $("#birimFiyat").val("");
+        }
+
+        function UrunKaydet() {
+            $.ajax({
+                type: "POST",
+                url: "/DepoStok/UrunGir",
+                data: {
+                    depoID: $("#depoID").val(),
+                    urunID: $("#urunID").val(),
+                    miktar: $("#miktar").val(),
+                    birimFiyat: $("#birimFiyat").val()
+                },
+                success: function (durum) {
+                    if (durum == 0) {
+                        alert("Ürün girişi başarılı");
+                        location.reload();
+                    } else {
+                        alert("İşlem sırasında hata oluştu");
+                    }
+                }
+            });
+        }
+    </script>
+}

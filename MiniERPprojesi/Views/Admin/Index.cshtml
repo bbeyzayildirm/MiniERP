@@ -1,0 +1,192 @@
+﻿@using MiniERPprojesi.Models
+@model Tuple<List<v_siparisler>, List<KarZarar>>
+
+@{
+    ViewBag.Title = "Admin Paneli";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var siparisler = Model.Item1;
+    var karZarar = Model.Item2;
+}
+
+<section class="content-header">
+    <h1>👨‍💼 Yönetim Paneli</h1>
+</section>
+
+<section class="content">
+
+    <!-- Özet Bilgi Kutuları -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h3>@ViewBag.KullaniciSayisi</h3>
+                    <p>Kullanıcı Sayısı</p>
+                </div>
+                <div class="icon"><i class="fas fa-user"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>@ViewBag.UrunSayisi</h3>
+                    <p>Ürün Sayısı</p>
+                </div>
+                <div class="icon"><i class="fas fa-box"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h3>@ViewBag.DepoSayisi</h3>
+                    <p>Depo Sayısı</p>
+                </div>
+                <div class="icon"><i class="fas fa-warehouse"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>@ViewBag.SiparisSayisi</h3>
+                    <p>Sipariş Sayısı</p>
+                </div>
+                <div class="icon"><i class="fas fa-shopping-cart"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3>@ViewBag.FaturaSayisi</h3>
+                    <p>Fatura Sayısı</p>
+                </div>
+                <div class="icon"><i class="fas fa-file-invoice"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kar-Zarar Grafiği -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title">📈 Aylık Kar-Zarar Grafiği</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="karZararChart" style="min-height: 300px;"></canvas>
+        </div>
+    </div>
+
+    <!-- Son 5 Sipariş -->
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h3 class="card-title">📋 Son 5 Sipariş</h3>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead style="border-top: 1px solid #dee2e6;">
+                    <tr>
+                        <th>Sipariş No</th>
+                        <th>Tarih</th>
+                        <th>Müşteri</th>
+                        <th>Durum</th>
+                        <th>Faturalandı mı?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in siparisler)
+                    {
+                        <tr>
+                            <td>@s.SiparisNo</td>
+                            <td>@s.SiparisTarihi.ToString("dd.MM.yyyy")</td>
+                            <td>@s.MusteriAdi</td>
+                            <td>@s.SiparisDurumu</td>
+                            <td>@(s.FaturalandiMi ? "Evet" : "Hayır")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</section>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(function () {
+            const aylar = [];
+            const gelirler = [];
+            const giderler = [];
+            const karlar = [];
+
+            @foreach (var item in karZarar)
+            {
+                <text>
+                    aylar.push("@item.Ay");
+                    gelirler.push(@item.SatisGeliri);
+                    giderler.push(@item.Maliyet);
+                    karlar.push(@item.Kar);
+                </text>
+            }
+
+            const ctx = document.getElementById('karZararChart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: aylar,
+                    datasets: [
+                        {
+                            label: 'Gelir',
+                            data: gelirler,
+                            backgroundColor: '#28a745',
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.7
+                        },
+                        {
+                            label: 'Gider',
+                            data: giderler,
+                            backgroundColor: '#dc3545',
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.7
+                        },
+                        {
+                            label: 'Kâr',
+                            type: 'line',
+                            data: karlar,
+                            borderColor: '#17a2b8',
+                            backgroundColor: 'transparent',
+                            borderWidth: 4,
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true },
+                        title: {
+                            display: true,
+                            text: 'Aylık Kar-Zarar Durumu'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return '₺' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,593 @@
+﻿@using MiniERPprojesi.Models
+@model List<v_siparisler>
+
+@{
+    ViewBag.Title = "Siparişler";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var urunler = ViewBag.Urunler as List<SelectListItem>;
+    var depolar = ViewBag.Depolar as List<SelectListItem>;
+}
+
+<h2>Siparişler</h2>
+
+<form method="get" action="/Siparis/Index" class="form-inline mb-3">
+    <label class="mr-2">Sipariş Durumu:</label>
+    <select name="siparisDurumu" class="form-control mr-3">
+        <option value="">Tümü</option>
+        @foreach (var d in ViewBag.SiparisDurumlari as List<SelectListItem>)
+        {
+            <option value="@d.Value" @(ViewBag.SeciliDurum == d.Value ? "selected" : "")>@d.Text</option>
+        }
+    </select>
+
+    <label class="mr-2">Faturalandı mı?</label>
+    <select name="faturalandiMi" class="form-control mr-3">
+        <option value="">Tümü</option>
+        <option value="true" @(ViewBag.SeciliFatura == true ? "selected" : "")>Evet</option>
+        <option value="false" @(ViewBag.SeciliFatura == false ? "selected" : "")>Hayır</option>
+    </select>
+
+    <label class="mr-2">Başlangıç Tarihi:</label>
+    <input type="date" name="baslangic" class="form-control mr-3" value="@ViewBag.Baslangic" />
+
+    <label class="mr-2">Bitiş Tarihi:</label>
+    <input type="date" name="bitis" class="form-control mr-3" value="@ViewBag.Bitis" />
+
+    <button class="btn text-white" style="background-color: #003d80;">Filtrele</button>
+</form>
+
+<!-- Müşteri adına göre arama -->
+<div class="form-inline mb-3">
+    <input type="text" id="siparisArama" class="form-control form-control-sm" style="min-width: 400px; height: 35px; max-width: 100%;" placeholder="Müşteri adı ile ara...">
+</div>
+
+
+<button class="btn btn-info mb-3" onclick="TemizleForm(); $('#siparisModalLabel').text('Yeni Sipariş Ekle'); $('#siparisModal').modal('show');">Yeni Sipariş Ekle</button>
+
+<table class="table table-bordered table-striped mt-3" id="siparisTable">
+    <thead>
+        <tr>
+            <th>Sipariş No</th>
+            <th>Sipariş Tarihi</th>
+            <th>Sipariş Durumu</th>
+            <th>Faturalandı mı?</th>
+            <th>Müşteri</th>
+            <th>Detay</th>
+            <th>Güncelle</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var s in Model)
+        {
+            <tr>
+                <td>@s.SiparisNo</td>
+                <td>@s.SiparisTarihi.ToShortDateString()</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <select class="form-control form-control-sm" id="durumSelect-@s.SiparisID" style="width: 150px;">
+
+                            <option value="Hazirlaniyor" @(s.SiparisDurumu == "Hazirlaniyor" ? "selected" : "")>Hazırlanıyor</option>
+                            <option value="Teslim Edildi" @(s.SiparisDurumu == "Teslim Edildi" ? "selected" : "") @(s.FaturalandiMi ? "" : "disabled")>Teslim Edildi</option>
+                            <option value="Iptal" @(s.SiparisDurumu == "Iptal" ? "selected" : "") @(s.FaturalandiMi ? "disabled" : "")>İptal</option>
+                        </select>
+                        <a href="#" class="btn btn-primary btn-sm durumGuncelleBtn ml-2" data-id="@s.SiparisID">Güncelle</a>
+
+                    </div>
+                </td>
+
+
+
+                <td>@(s.FaturalandiMi ? "Evet" : "Hayır")</td>
+                <td>@s.MusteriAdi</td>
+                <td>
+                    <a href="#" class="btn btn-success siparisDetay" data-id="@s.SiparisID">Detay</a>
+                </td>
+                <td>
+                    <a href="#" class="btn btn-warning siparisGuncelle" data-id="@s.SiparisID">Güncelle</a>
+                </td>
+
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Sipariş Ekle Modal -->
+<div class="modal fade" id="siparisModal" tabindex="-1" role="dialog" aria-labelledby="siparisModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="siparisModalLabel">Yeni Sipariş Ekle</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="siparisID" name="siparis.SiparisID" />
+
+                <input type="hidden" id="adresID" name="siparis.AdresID" />
+
+
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Müşteri:</label>
+                        <select id="musteriID" class="form-control">
+                            <option value="">Müşteri Seçiniz</option>
+                            @foreach (var m in ViewBag.Musteriler as List<SelectListItem>)
+                            {
+                                <option value="@m.Value">@m.Text</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Sipariş Durumu hidden olarak tanımlı -->
+                    <input type="hidden" id="siparisDurumu" name="siparis.SiparisDurumu" value="Hazirlaniyor" />
+
+                    <div class="form-group col-md-3">
+                        <label>Sipariş No:</label>
+                        <input type="text" id="siparisNo" name="SiparisNo" class="form-control" readonly />
+
+                    </div>
+                </div>
+
+
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label>İl:</label><select id="ilID" class="form-control">
+                            <option>İl Seçiniz</option>
+                            @foreach (var il in ViewBag.iller as List<SelectListItem>)
+                            {
+                                <option value="@il.Value">@il.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group col-md-3"><label>İlçe:</label><select id="ilceID" class="form-control"><option>İlçe Seçiniz</option></select></div>
+                    <div class="form-group col-md-3"><label>Mahalle:</label><input type="text" id="mahalle" class="form-control" /></div>
+                    <div class="form-group col-md-3"><label>Sokak:</label><input type="text" id="sokak" class="form-control" /></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-3"><label>Bina No:</label><input type="text" id="binaNo" class="form-control" /></div>
+                    <div class="form-group col-md-3"><label>Daire No:</label><input type="text" id="daireNo" class="form-control" /></div>
+                    <div class="form-group col-md-3"><label>Posta Kodu:</label><input type="text" id="postaKodu" class="form-control" /></div>
+                    <div class="form-group col-md-3">
+                        <label>Faturalandı mı?</label><input type="checkbox" id="faturalandiMi" class="form-check-input ml-2" disabled />
+                    </div>
+                </div>
+
+                <hr />
+                <h5>Ürün Kalemleri</h5>
+                <table class="table table-bordered">
+                    <thead><tr><th>Ürün</th><th>Depo</th><th>Adet</th><th>Birim Fiyat</th><th></th></tr></thead>
+                    <tbody id="siparisUrunBody"></tbody>
+                </table>
+                <button type="button" id="btnUrunSatiriEkle" class="btn btn-outline-primary btn-sm" onclick="UrunSatiriEkle();">+ Ürün Satırı Ekle</button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="SiparisKaydet();">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detay Modal -->
+<div class="modal fade" id="detayModal" tabindex="-1" role="dialog" aria-labelledby="detayModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="detayModalLabel">Sipariş Detayları</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group col-md-3"><label>Sipariş No:</label><input type="text" id="txtSiparisNo" class="form-control" readonly /></div>
+                    <div class="form-group col-md-3"><label>Tarih:</label><input type="text" id="txtTarih" class="form-control" readonly /></div>
+                    <div class="form-group col-md-3"><label>Durum:</label><input type="text" id="txtDurum" class="form-control" readonly /></div>
+                    <div class="form-group col-md-3"><label>Faturalandı mı:</label><input type="text" id="txtFaturalandiMi" class="form-control" readonly /></div>
+                </div>
+                <div class="form-group"><label>Müşteri:</label><input type="text" id="txtMusteri" class="form-control" readonly /></div>
+                <div class="form-group"><label>Adres:</label><textarea id="txtAdres" class="form-control" rows="2" readonly></textarea></div>
+
+                <label><strong>Ürünler:</strong></label>
+                <table class="table table-sm table-bordered" id="urunTable">
+                    <thead>
+                        <tr>
+                            <th>Ürün</th>
+                            <th>Depo</th>
+                            <th>Adet</th>
+                            <th>Birim Fiyat</th>
+                            <th>İptal</th>
+                        </tr>
+                    </thead>
+
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+
+        // Ürün satırlarının name index'lerini sıfırla
+        function GuncelleUrunSatirIndexleri() {
+            $("#siparisUrunBody tr").each(function (i) {
+                $(this).find("select, input").each(function () {
+                    var nameAttr = $(this).attr("name");
+                    if (nameAttr) {
+                        var yeniName = nameAttr.replace(/\[\d+\]/, "[" + i + "]");
+                        $(this).attr("name", yeniName);
+                    }
+                });
+            });
+        }
+
+        // Son satırsa silmeye izin verme, ardından indexleri güncelle
+        function SatirSil(btn) {
+            // Satırı sil
+            var satir = $(btn).closest("tr");
+            satir.remove();
+
+            // Eğer hiç ürün kalmadıysa, otomatik yeni ürün satırı ekle
+            if ($("#siparisUrunBody tr").length === 0) {
+                alert("En az bir ürün kalemi olmalı.");
+                UrunSatiriEkle();
+            }
+
+            // Satır isimlerini yeniden sırala
+            var index = 0;
+            $("#siparisUrunBody tr").each(function () {
+                $(this).find("select, input").each(function () {
+                    var eskiIsim = $(this).attr("name");
+                    if (eskiIsim) {
+                        var yeniIsim = eskiIsim.replace(/\[\d+\]/, "[" + index + "]");
+                        $(this).attr("name", yeniIsim);
+                    }
+                });
+                index++;
+            });
+        }
+
+    // Form Temizleme
+        function TemizleForm() {
+            // Tüm form alanlarını aktif hale getir
+            $("#siparisModal input, #siparisModal select, #siparisModal textarea").prop("disabled", false);
+
+            // Ürün satırları içindeki select/input/button alanlarını da aktif et
+            $("#siparisUrunBody").find("select, input, button").prop("disabled", false);
+
+            // Kaydet ve +Ürün Satırı Ekle butonlarını görünür yap
+            $("#siparisModal .btn-primary").show();
+            $("#btnUrunSatiriEkle").show();
+
+            // Başlığı sıfırla
+            $("#siparisModalLabel").text("Yeni Sipariş Ekle");
+
+            // Form alanlarını temizle
+            $('#siparisID').val('');
+            $('#adresID').val('');
+            $('#musteriID').val('');
+            $('#siparisNo').val('');
+            $('#siparisDurumu').val('');
+            $('#faturalandiMi').prop('checked', false);
+            $('#ilID').val('');
+            $('#ilceID').empty().append('<option>İlçe Seçiniz</option>');
+            $('#mahalle, #sokak, #binaNo, #daireNo, #postaKodu').val('');
+            $('#siparisUrunBody').empty();
+        }
+
+    // İl seçildiğinde ilçe yükle
+    function IlceYukle(ilID, selectedIlceID = null) {
+        $.get("/Siparis/IlceleriGetir", { ilID: ilID }, function (data) {
+            $("#ilceID").empty().append('<option value="">İlçe Seçiniz</option>');
+            $.each(data, function (i, ilce) {
+                const selected = (selectedIlceID == ilce.IlceID) ? 'selected' : '';
+                $("#ilceID").append('<option value="' + ilce.IlceID + '" ' + selected + '>' + ilce.IlceAdi + '</option>');
+            });
+        });
+    }
+
+    $("#ilID").change(function () {
+        IlceYukle($(this).val());
+    });
+
+    // Müşteri seçilince adresi getir
+    $("#musteriID").change(function () {
+        var mid = $(this).val();
+        if (!mid) return;
+        $.get("/Siparis/MusteriAdresGetir", { musteriID: mid }, function (a) {
+            $("#ilID").val(a.IlID);
+            IlceYukle(a.IlID, a.IlceID);
+            $("#mahalle").val(a.Mahalle);
+            $("#sokak").val(a.Sokak);
+            $("#binaNo").val(a.BinaNo);
+            $("#daireNo").val(a.DaireNo);
+            $("#postaKodu").val(a.PostaKodu);
+        });
+    });
+
+    // Ürün satırı ekle
+function UrunSatiriEkle() {
+    var index = $("#siparisUrunBody tr").length;
+
+    var satir = `<tr>
+        <td>
+            <select class="form-control urunSelect" name="Urunler[${index}].UrunID">
+                <option value="">Ürün Seçiniz</option>`;
+    @foreach (var u in ViewBag.Urunler as List<SelectListItem>)
+    {
+        @:satir += '<option value="@u.Value">@u.Text</option>';
+    }
+    satir += `</select>
+        </td>
+        <td>
+            <select class="form-control" name="Urunler[${index}].DepoID">
+                <option value="">Depo Seçiniz</option>`;
+    @foreach (var d in ViewBag.Depolar as List<SelectListItem>)
+    {
+        @:satir += '<option value="@d.Value">@d.Text</option>';
+    }
+    satir += `</select>
+        </td>
+        <td><input type="number" class="form-control" name="Urunler[${index}].Adet" min="1" value="1" /></td>
+        <td><input type="number" class="form-control birimFiyat" name="Urunler[${index}].BirimFiyat" readonly /></td>
+        <td><button type="button" class="btn btn-danger btn-sm" onclick="SatirSil(this)">Sil</button></td>
+    </tr>`;
+
+    $("#siparisUrunBody").append(satir);
+    GuncelleUrunSatirIndexleri();
+}
+
+    // Ürün seçilince fiyat getir
+    $(document).on("change", ".urunSelect", function () {
+        var urunID = $(this).val();
+        var fiyatInput = $(this).closest("tr").find(".birimFiyat");
+
+        if (urunID) {
+            $.get("/Siparis/UrunFiyatGetir", { urunID: urunID }, function (fiyat) {
+                fiyatInput.val(fiyat);
+            });
+        } else {
+            fiyatInput.val("");
+        }
+    });
+
+    // Siparişi Kaydet
+        function SiparisKaydet() {
+            // Ürün kontrolü
+            if ($("#siparisUrunBody tr").length === 0) {
+                alert("En az bir ürün kalemi eklemelisiniz.");
+                return;
+            }
+
+            // Boş alan kontrolleri
+            if (!$("#musteriID").val()) {
+                alert("Lütfen müşteri seçiniz.");
+                return;
+            }
+
+            // Ürün kalemlerinde eksik alan kontrolü
+            let eksikSatirVar = false;
+            $("#siparisUrunBody tr").each(function () {
+                const urunID = $(this).find("select[name*='.UrunID']").val();
+                const depoID = $(this).find("select[name*='.DepoID']").val();
+                const adet = $(this).find("input[name*='.Adet']").val();
+                const fiyat = $(this).find("input[name*='.BirimFiyat']").val();
+
+                if (!urunID || !depoID || adet <= 0 || fiyat <= 0) {
+                    eksikSatirVar = true;
+                    return false;
+                }
+            });
+
+            if (eksikSatirVar) {
+                alert("Tüm ürün satırlarında ürün, depo, adet ve fiyat bilgisi girilmelidir.");
+                return;
+            }
+            var data = {
+                "siparis.SiparisID": $("#siparisID").val(),
+                "siparis.SiparisNo": $("#siparisNo").val(),
+                "siparis.MusteriID": $("#musteriID").val(),
+                "siparis.FaturalandiMi": $("#faturalandiMi").is(":checked"),
+                "siparis.AdresID": $("#adresID").val(),
+                "siparis.SiparisDurumu": "Hazirlaniyor",
+
+                "adres.Mahalle": $("#mahalle").val(),
+                "adres.Sokak": $("#sokak").val(),
+                "adres.BinaNo": $("#binaNo").val(),
+                "adres.DaireNo": $("#daireNo").val(),
+                "adres.PostaKodu": $("#postaKodu").val(),
+                "adres.IlceID": $("#ilceID").val()
+            };
+
+            $("#siparisUrunBody tr").each(function (i) {
+                data[`Urunler[${i}].DepoID`] = $(this).find(`select[name='Urunler[${i}].DepoID']`).val();
+                data[`Urunler[${i}].UrunID`] = $(this).find(`select[name='Urunler[${i}].UrunID']`).val();
+                data[`Urunler[${i}].Adet`] = $(this).find(`input[name='Urunler[${i}].Adet']`).val();
+                data[`Urunler[${i}].BirimFiyat`] = $(this).find(`input[name='Urunler[${i}].BirimFiyat']`).val();
+            });
+
+            console.log("Gönderilen data:", data);
+
+            $.post("/Siparis/SiparisEkle", data, function (durum) {
+                if (durum == 0) {
+                    alert("Sipariş kaydedildi.");
+                    $("#siparisModal").modal("hide");
+                    location.reload();
+                } else if (durum == 1) {
+                    alert("Mevcut sipariş veya adres bulunamadı.");
+                } else if (durum == 2) {
+                    alert("Ürün eklenmediği için sipariş oluşturulamadı.");
+                } else if (durum == 3) {
+                    alert("Lütfen tüm zorunlu alanları doldurun.");
+                } else if (durum == 6) {
+                    alert("Seçilen depoda yeterli stok yok. Sipariş oluşturulamadı.");
+                } else if (durum == 7) {
+                    alert("Seçilen depoda bu ürün tanımlı değil!");
+                } else if (durum == 8) {
+                    alert("Faturalanmış bir sipariş iptal edilemez!");
+                }
+                else if (durum == 9) {
+                    alert("Faturalanmış bir sipariş güncellenemez! Sadece 'Teslim Edildi' durumuna güncellenebilir.");
+                }
+                else {
+                    alert("Kayıt sırasında beklenmeyen bir hata oluştu.");
+                }
+            });
+
+
+
+        }
+
+    // Sipariş Detaylarını Göster
+    $(document).on("click", ".siparisDetay", function () {
+        var id = $(this).data("id");
+        $.get("/Siparis/SiparisDetayGetir", { id: id }, function (data) {
+            if (data.length === 0) return alert("Detay bulunamadı.");
+            var s = data[0];
+            $("#txtSiparisNo").val(s.SiparisNo);
+            $("#txtTarih").val(new Date(parseInt(s.SiparisTarihi.substr(6))).toLocaleDateString());
+            $("#txtDurum").val(s.SiparisDurumu);
+            $("#txtFaturalandiMi").val(s.FaturalandiMi ? "Evet" : "Hayır");
+            $("#txtMusteri").val(s.MusteriAdi + " (" + s.MusteriTuru + ")");
+            $("#txtAdres").val(s.Adres + " (" + s.IlAdi + "/" + s.IlceAdi + ")");
+            $("#urunTable tbody").empty();
+            $.each(data, function (i, urun) {
+                $('#urunTable tbody').append(`<tr>
+    <td>${urun.UrunAdi ?? '-'}</td>
+    <td>${urun.DepoAdi ?? '-'}</td>
+    <td>${urun.Adet != null ? urun.Adet : '-'}</td>
+    <td>${urun.BirimFiyat != null ? parseFloat(urun.BirimFiyat).toFixed(2) + ' ₺' : '-'}</td>
+    <td>${urun.IptalEdildi ? 'Evet' : 'Hayır'}</td>
+</tr>`);
+
+            });
+
+
+            $("#detayModal").modal("show");
+        });
+    });
+
+    // Sipariş Güncelle
+$(document).on("click", ".siparisGuncelle", function () {
+    var id = $(this).data("id");
+
+    $.get("/Siparis/SiparisGetir", { id: id }, function (s) {
+        if (!s) return alert("Sipariş bulunamadı.");
+
+        // Faturalı siparişse alanları pasifleştir
+        if (s.FaturalandiMi) {
+            alert("ℹ️ Bu sipariş faturalanmıştır. Güncelleme yapılamaz.");
+
+            // Form genel alanlarını pasifleştir
+            $("#siparisModal input, #siparisModal select, #siparisModal textarea").prop("disabled", true);
+
+            // Kaydet butonunu gizle
+            $("#siparisModal .btn-primary").hide();
+
+            // Ürün Satırı Ekle butonunu gizle
+            $("#btnUrunSatiriEkle").hide();
+
+            // Başlığı güncelle
+            $("#siparisModalLabel").text("Faturalı Sipariş (Salt Okuma)");
+
+            // Ürün satırları sonradan geldiği için DOM'a eklenince pasifleştir
+            setTimeout(function () {
+                $("#siparisUrunBody").find("select, input, button").prop("disabled", true);
+            }, 100);
+        }
+
+        else {
+            // Aktif güncellenebilir sipariş → inputları aç
+            $("#siparisModal input, #siparisModal select").prop("disabled", false);
+            $("#siparisModal .btn-primary").show();
+            $("#siparisModalLabel").text("Siparişi Güncelle");
+        }
+
+        // Sipariş bilgileri
+        $("#siparisID").val(s.SiparisID);
+        $("#siparisNo").val(s.SiparisNo);
+        $("#siparisDurumu").val(s.SiparisDurumu);
+        $("#musteriID").val(s.MusteriID);
+        $("#faturalandiMi").prop("checked", s.FaturalandiMi);
+
+        // Adres
+        $("#adresID").val(s.AdresID);
+        $("#ilID").val(s.Adres.IlID);
+        IlceYukle(s.Adres.IlID, s.Adres.IlceID);
+        $("#mahalle").val(s.Adres.Mahalle);
+        $("#sokak").val(s.Adres.Sokak);
+        $("#binaNo").val(s.Adres.BinaNo);
+        $("#daireNo").val(s.Adres.DaireNo);
+        $("#postaKodu").val(s.Adres.PostaKodu);
+
+        // Ürün kalemlerini sıfırla
+        $("#siparisUrunBody").empty();
+
+        $.each(s.Urunler, function (i, k) {
+            var urunOptions = `<option value="">Ürün Seçiniz</option>`;
+            @foreach (var u in ViewBag.Urunler as List<SelectListItem>)
+            {
+                <text>urunOptions += '<option value="@u.Value">@u.Text</option>';</text>
+            }
+
+            var depoOptions = `<option value="">Depo Seçiniz</option>`;
+            @foreach (var d in ViewBag.Depolar as List<SelectListItem>)
+            {
+                <text>depoOptions += '<option value="@d.Value">@d.Text</option>';</text>
+            }
+
+            var satir = `
+            <tr>
+                <td><select class="form-control urunSelect" name="Urunler[${i}].UrunID">${urunOptions}</select></td>
+                <td><select class="form-control" name="Urunler[${i}].DepoID">${depoOptions}</select></td>
+                <td><input type="number" class="form-control" name="Urunler[${i}].Adet" value="${k.Adet}" /></td>
+                <td><input type="number" class="form-control birimFiyat" name="Urunler[${i}].BirimFiyat" value="${k.BirimFiyat}" readonly /></td>
+                <td><button type="button" class="btn btn-danger btn-sm" onclick="SatirSil(this)">Sil</button></td>
+            </tr>`;
+
+            $("#siparisUrunBody").append(satir);
+
+            $(`select[name='Urunler[${i}].UrunID']`).val(k.UrunID);
+            $(`select[name='Urunler[${i}].DepoID']`).val(k.DepoID);
+        });
+
+        $("#siparisModal").modal("show");
+        GuncelleUrunSatirIndexleri();
+    });
+});
+
+        // 🔍üşteri adına göre arama
+        $("#siparisArama").on("keyup", function () {
+            var arama = $(this).val().toLowerCase();
+
+            $("#siparisTable tbody tr").filter(function () {
+                var musteriAdi = $(this).find("td:nth-child(5)").text().toLowerCase();
+                $(this).toggle(musteriAdi.indexOf(arama) > -1);
+            });
+        });
+
+        // Güncelle Butonuna Basıldığında Sipariş Durumu Güncelle
+        $(document).on("click", ".durumGuncelleBtn", function () {
+            var siparisID = $(this).data("id");
+            var yeniDurum = $(`#durumSelect-${siparisID}`).val();
+
+            $.post("/Siparis/SiparisDurumuGuncelle", {
+                siparisID: siparisID,
+                yeniDurum: yeniDurum
+            }, function (sonuc) {
+                if (sonuc == 0) {
+                    alert("Sipariş durumu güncellendi.");
+                    location.reload();
+                } else if (sonuc == 2) {
+                    alert("Faturalı sipariş yalnızca 'Teslim Edildi' yapılabilir.");
+                    location.reload();
+                } else {
+                    alert("Güncelleme sırasında hata oluştu.");
+                    location.reload();
+                }
+            });
+
+        });
+
+    </script>
+}

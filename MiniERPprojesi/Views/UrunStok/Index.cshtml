@@ -1,0 +1,189 @@
+﻿@{
+    ViewBag.Title = "Ürün ve Stok Özeti";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var depoAdlari = ViewBag.DepoAdlari as List<string>;
+    var stokMiktarlari = ViewBag.StokMiktarlari as List<int>;
+    var kritikUrunler = ViewBag.KritikUrunler as List<MiniERPprojesi.Models.v_depostok>;
+    var sonHareketler = ViewBag.SonHareketler as List<MiniERPprojesi.Models.v_stokhareketleri>;
+}
+
+<section class="content-header">
+    <h1>Ürün ve Stok Özeti</h1>
+</section>
+
+<section class="content">
+    <div class="row">
+        <!-- Kartlar -->
+        <div class="col-md-3">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3>@ViewBag.UrunSayisi</h3>
+                    <p>Toplam Ürün</p>
+                </div>
+                <div class="icon"><i class="fas fa-boxes"></i></div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>@ViewBag.DepoSayisi</h3>
+                    <p>Toplam Depo</p>
+                </div>
+                <div class="icon"><i class="fas fa-warehouse"></i></div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h3>@ViewBag.KritikSayisi</h3>
+                    <p>Kritik Stoklu Ürün</p>
+                </div>
+                <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>@ViewBag.BugunkuCikis</h3>
+                    <p>Bugünkü Çıkışlar</p>
+                </div>
+                <div class="icon"><i class="fas fa-truck-loading"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafik: Depolara Göre Stok Dağılımı -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title">Depolara Göre Stok Dağılımı</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="stokChart" style="height: 250px;"></canvas>
+
+        </div>
+    </div>
+
+    <!-- Kritik stoklu ürünler tablosu -->
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <h3 class="card-title">Kritik Stokta Olan Ürünler</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Depo</th>
+                        <th>Ürün</th>
+                        <th>Miktar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in kritikUrunler)
+                    {
+                        <tr>
+                            <td>@item.DepoAdi</td>
+                            <td>@item.UrunAdi</td>
+                            <td>@item.Miktar</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Son stok hareketleri tablosu -->
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <h3 class="card-title">Son 5 Stok Hareketi</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Ürün</th>
+                        <th>Depo</th>
+                        <th>Tip</th>
+                        <th>Miktar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var h in sonHareketler)
+                    {
+                        <tr>
+                            <td>@h.HareketTarihi.ToString("dd.MM.yyyy")</td>
+                            <td>@h.UrunAdi</td>
+                            <td>@h.DepoAdi</td>
+                            <td>@(h.HareketTipi == 1 ? "Giriş" : "Çıkış")</td>
+                            <td>@h.Miktar</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(function () {
+            // ViewBag'den gelen veriler
+            var depoAdlari = @Html.Raw(Json.Encode(ViewBag.DepoAdlari));
+            var urunAdlari = @Html.Raw(Json.Encode(ViewBag.UrunAdlari));
+            var stokVerileri = @Html.Raw(Json.Encode(ViewBag.StokVerileri));
+
+            // Renk paleti (ürün sayısı kadar dönsün)
+            var renkler = [
+                'rgba(60,141,188,0.9)',
+                'rgba(0,166,90,0.9)',
+                'rgba(243,156,18,0.9)',
+                'rgba(221,75,57,0.9)',
+                'rgba(96,92,168,0.9)',
+                'rgba(0,192,239,0.9)'
+            ];
+
+            var datasets = [];
+            for (var i = 0; i < urunAdlari.length; i++) {
+                datasets.push({
+                    label: urunAdlari[i],
+                    backgroundColor: renkler[i % renkler.length],
+                    borderColor: renkler[i % renkler.length].replace('0.9', '1'),
+                    borderWidth: 1,
+                    data: stokVerileri[i]
+                });
+            }
+
+            var ctx = document.getElementById('stokChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: depoAdlari,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Depolara Göre Ürün Stok Dağılımı'
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}
+

@@ -1,0 +1,58 @@
+﻿# ----- Visual Studio / .NET -----
+.vs/
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+TestResults/
+*.log
+*.tlog
+*.cache
+*.user
+*.suo
+*.sln.docstates
+*.vcxproj.user
+*.rsuser
+
+# NuGet
+packages/
+*.nupkg
+# packages.lock.json
+
+# ReSharper / Rider
+.idea/
+_ReSharper.Caches/
+*.DotSettings.user
+
+# IIS / Publish profilleri
+*.Publish.xml
+*.pubxml
+*.pubxml.user
+
+# Entity Framework
+*.edmx.diagram
+*.edmx.sql
+
+# Local config (şifreler vs.)
+web.config.local
+*.config.local
+
+# App_Data (çalışan DB dosyaları)
+App_Data/*.mdf
+App_Data/*.ldf
+
+# Node (varsa)
+node_modules/
+
+# OS dosyaları
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Alt projelerdeki build klasörleri
+**/bin/
+**/obj/
+
+# (Opsiyonel) Yükleme klasörünü repo dışı tutmak istersen aç:
+#Uploads/
+#Uploads/**/*

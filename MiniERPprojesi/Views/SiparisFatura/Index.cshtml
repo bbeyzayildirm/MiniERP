@@ -1,0 +1,201 @@
+﻿@{
+    ViewBag.Title = "Sipariş ve Faturalama Paneli";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var siparisDurumAdlari = ViewBag.SiparisDurumAdlari as List<string>;
+    var siparisDurumAdetleri = ViewBag.SiparisDurumAdetleri as List<int>;
+    var sonSiparisler = ViewBag.SonSiparisler as List<MiniERPprojesi.Models.v_siparisler>;
+    var sonFaturalar = ViewBag.SonFaturalar as List<MiniERPprojesi.Models.v_faturalar>;
+
+}
+
+<section class="content-header">
+    <h1>Sipariş ve Faturalama Özeti</h1>
+</section>
+
+<section class="content">
+    <div class="row">
+        <!-- Kartlar -->
+        <div class="col-md-3">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3>@ViewBag.BugunkuSiparis</h3>
+                    <p>Bugünkü Sipariş</p>
+                </div>
+                <div class="icon"><i class="fas fa-receipt"></i></div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>@ViewBag.BugunkuFatura</h3>
+                    <p>Bugünkü Fatura</p>
+                </div>
+                <div class="icon"><i class="fas fa-file-invoice-dollar"></i></div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h3>@ViewBag.Faturalanan</h3>
+                    <p>Faturalanan Sipariş</p>
+                </div>
+                <div class="icon"><i class="fas fa-check-circle"></i></div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>@ViewBag.Faturalanmayan</h3>
+                    <p>Faturalanmayan Sipariş</p>
+                </div>
+                <div class="icon"><i class="fas fa-times-circle"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafikler -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title">Sipariş Durumu Grafiği</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="siparisDurumChart" style="height: 250px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title">Faturalanma Durumu</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="faturaChart" style="height: 250px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Son 5 Sipariş -->
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h3 class="card-title">Son 5 Sipariş</h3>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Tarih</th>
+                        <th>Durum</th>
+                        <th>Müşteri</th>
+                        <th>Faturalı mı?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in sonSiparisler)
+                    {
+                        <tr>
+                            <td>@s.SiparisNo</td>
+                            <td>@s.SiparisTarihi.ToString("dd.MM.yyyy")</td>
+                            <td>@s.SiparisDurumu</td>
+                            <td>@s.MusteriAdi</td>
+                            <td>@(s.FaturalandiMi ? "Evet" : "Hayır")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Son 5 Fatura -->
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h3 class="card-title">Son 5 Fatura</h3>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Fatura No</th>
+                        <th>Tarih</th>
+                        <th>Sipariş No</th>
+                        <th>Tutar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in sonFaturalar)
+                    {
+                        <tr>
+                            <td>@f.FaturaNo</td>
+                            <td>@f.FaturaTarihi.ToString("dd.MM.yyyy")</td>
+                            <td>@f.SiparisNo</td>
+                            <td>@f.ToplamTutar.ToString("C")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</section>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(function () {
+            var siparisDurumAdlari = @Html.Raw(Json.Encode(ViewBag.SiparisDurumAdlari));
+            var siparisDurumAdetleri = @Html.Raw(Json.Encode(ViewBag.SiparisDurumAdetleri));
+
+            // Sipariş Durumu Bar Chart
+            new Chart(document.getElementById('siparisDurumChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: siparisDurumAdlari,
+                    datasets: [{
+                        label: 'Sipariş Adedi',
+                        data: siparisDurumAdetleri,
+                        backgroundColor: ['#007bff', '#ffc107', '#dc3545'],
+                        barThickness: 100
+                    }]
+
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                precision: 0
+                            }
+                        }
+                    }
+
+                }
+            });
+
+            // Faturalanma Pie Chart
+            new Chart(document.getElementById('faturaChart').getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: ['Faturalanan', 'Faturalanmayan'],
+                    datasets: [{
+                        data: [@ViewBag.Faturalanan, @ViewBag.Faturalanmayan],
+                        backgroundColor: ['#28a745', '#dc3545']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        });
+    </script>
+}

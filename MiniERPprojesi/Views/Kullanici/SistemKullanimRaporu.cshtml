@@ -1,0 +1,42 @@
+﻿@model List<MiniERPprojesi.Models.KullaniciGirisLogViewModel>
+
+@{
+    ViewBag.Title = "Sistem Kullanım Raporu";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>🕒 Sistem Kullanım Raporu</h2>
+
+<table class="table table-bordered table-striped table-sm">
+    <thead>
+        <tr>
+            <th>Kullanıcı</th>
+            <th>Rol</th>
+            <th>Giriş Zamanı</th>
+            <th>Çıkış Zamanı</th>
+            <th>Toplam Süre (Dakika)</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.AdSoyad</td>
+                <td>@item.Rol</td>
+                <td>@item.GirisZamani.ToString("dd.MM.yyyy HH:mm")</td>
+                <td>
+                    @if (item.CikisZamani.HasValue)
+                    {
+                        @item.CikisZamani.Value.ToString("dd.MM.yyyy HH:mm")
+                    }
+                    else
+                    {
+                        <em class="text-muted">Henüz çıkmamış</em>
+                    }
+                </td>
+
+                <td>@item.Dakika</td>
+            </tr>
+        }
+    </tbody>
+</table>

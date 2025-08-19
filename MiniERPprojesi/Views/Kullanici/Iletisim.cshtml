@@ -1,0 +1,49 @@
+﻿@model List<MiniERPprojesi.Models.v_kullanicilar>
+
+@{
+    ViewBag.Title = "İletişim";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="content-header">
+    <h2>Kullanıcı İletişim Bilgileri</h2>
+</section>
+
+<section class="content">
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h3 class="card-title">Kullanıcı Listesi</h3>
+        </div>
+
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Fotoğraf</th>
+                        <th>Ad Soyad</th>
+                        <th>Kullanıcı Adı</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <img src="@Url.Content(item.ProfilFotoUrl ?? "~/Content/dist/img/user2-160x160.jpg")"
+                                     alt="Profil Foto"
+                                     width="40" height="40"
+                                     class="rounded-circle" />
+                            </td>
+                            <td>@(item.Ad + " " + item.Soyad)</td>
+                            <td>@item.KullaniciAdi</td>
+                            <td>@item.Email</td>
+                            <td>@item.RolAdi</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

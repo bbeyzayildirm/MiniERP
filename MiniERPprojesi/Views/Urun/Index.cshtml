@@ -1,0 +1,204 @@
+﻿@using MiniERPprojesi.Models
+@model List<v_urunler>
+
+@{
+    ViewBag.Title = "Ürünler";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="content-header">
+    <div class="container-fluid">
+        <form method="get" action="/Urun/Index" class="form-inline mb-3">
+            <div class="form-group mr-3">
+                <label for="kategoriId" class="mr-2 font-weight-bold">Kategori:</label>
+                <select name="kategoriId" id="kategoriId" class="form-control">
+                    <option value="" @(ViewBag.SeciliKategori == null ? "selected" : "")>Tümünü Göster</option>
+                    @foreach (var kategori in ViewBag.kategoriler as List<Kategoriler>)
+                    {
+                        <option value="@kategori.KategoriID" @(kategori.KategoriID == (ViewBag.SeciliKategori ?? 0) ? "selected" : "")>
+                            @kategori.KategoriAdi
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <button class="btn text-white" style="background-color: #003d80;">Filtrele</button>
+        </form>
+
+
+        <h2>Ürünler</h2>
+        <button class="btn btn-info mb-3" onclick="TemizleForm(); $('#urunModalLabel').text('Yeni Ürün Ekle'); $('#urunModal').modal('show');">Yeni Ürün Ekle</button>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            @foreach (var i in Model)
+            {
+                <div class="col-md-4">
+                    <div class="card card-primary">
+                        <div class="card-header bg-info text-white">
+                            <h3 class="card-title">@i.UrunAdi</h3>
+                        </div>
+                        <div class="card-body text-center">
+                            @if (!string.IsNullOrEmpty(i.ResimYolu))
+                            {
+                                <img src="@Url.Content(i.ResimYolu)" class="img-fluid mb-3" style="max-height:200px; object-fit:contain;" alt="@i.UrunAdi" />
+                            }
+                            else
+                            {
+                                <img src="~/Content/Images/no-image.png" class="img-fluid mb-3" style="max-height:200px; object-fit:contain;" alt="Resim yok" />
+                            }
+                            <p><strong>Açıklama:</strong> @i.Aciklama</p>
+                            <p><strong>Fiyat:</strong> @i.Fiyat ₺</p>
+                            <p><strong>Kategori:</strong> @i.KategoriAdi</p>
+                        </div>
+                        <div class="card-footer text-center">
+                            <button class="btn btn-danger urunSil" data-id="@i.UrunID" data-ad="@i.UrunAdi">Sil</button>
+                            <button class="btn btn-warning urunGuncelle" data-id="@i.UrunID">Güncelle</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Ürün Modal -->
+<div class="modal fade" id="urunModal" tabindex="-1" role="dialog" aria-labelledby="urunModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info">
+                <h4 class="modal-title text-white" id="urunModalLabel">Ürün Bilgileri</h4>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="UrunID" />
+                <div class="form-group">
+                    <label>Ürün Adı:</label>
+                    <input type="text" class="form-control" id="UrunAdi" />
+                </div>
+                <div class="form-group">
+                    <label>Açıklama:</label>
+                    <input type="text" class="form-control" id="Aciklama" />
+                </div>
+                <div class="form-group">
+                    <label>Fiyat:</label>
+                    <input type="number" class="form-control" id="Fiyat" />
+                </div>
+                <div class="form-group">
+                    <label>Kategori:</label>
+                    <select id="KategoriID" class="form-control">
+                        <option value="">Seçiniz</option>
+                        @foreach (var k in ViewBag.kategoriler as List<Kategoriler>)
+                        {
+                            <option value="@k.KategoriID">@k.KategoriAdi</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group text-center">
+                    <label class="btn btn-warning">
+                        📁 Dosya Seç
+                        <input type="file" class="d-none" id="Resim" />
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-success" onclick="UrunKaydet()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        $(document).on("click", ".urunSil", function () {
+            var id = $(this).data("id");
+            var ad = $(this).data("ad");
+
+            if (confirm(ad + " silinsin mi?")) {
+                $.ajax({
+                    type: "POST",
+                    url: "/Urun/UrunSil",
+                    data: { id: id },
+                    success: function (sonuc) {
+                        if (sonuc == 0) {
+                            alert("Silme başarılı");
+                            location.reload();
+                        } else {
+                            alert("Hata oluştu");
+                        }
+                    }
+                });
+            }
+        });
+
+        $(document).on("click", ".urunGuncelle", function () {
+            var id = $(this).data("id");
+
+            $.get("/Urun/UrunGetir", { id: id }, function (u) {
+                $("#UrunID").val(u.UrunID);
+                $("#UrunAdi").val(u.UrunAdi);
+                $("#Aciklama").val(u.Aciklama);
+                $("#Fiyat").val(u.Fiyat);
+                $("#KategoriID").val(u.KategoriID);
+                $("#urunModalLabel").text("Ürün Güncelle");
+                $("#urunModal").modal("show");
+            });
+        });
+
+        function UrunKaydet() {
+
+            $(".is-invalid").removeClass("is-invalid");
+
+            var urunAdi = $("#UrunAdi").val().trim();
+            var kategoriId = $("#KategoriID").val();
+            var fiyatStr = $("#Fiyat").val().trim();
+            var fiyat = parseFloat(fiyatStr.replace(",", "."));
+
+            if (urunAdi === "" || !kategoriId || kategoriId === "" || fiyatStr === "" || isNaN(fiyat) || fiyat <= 0) {
+                alert("Lütfen Ürün Adı, Kategori ve 0'dan büyük bir Fiyat giriniz.");
+                return;
+            }
+
+
+            var formData = new FormData();
+            formData.append("UrunID", $("#UrunID").val());
+            formData.append("UrunAdi", $("#UrunAdi").val());
+            formData.append("Aciklama", $("#Aciklama").val());
+            formData.append("Fiyat", $("#Fiyat").val());
+            formData.append("KategoriID", $("#KategoriID").val());
+            formData.append("OlusturanKullaniciID", 1);
+            formData.append("Resim", $("#Resim")[0].files[0]);
+
+            $.ajax({
+                type: "POST",
+                url: "/Urun/UrunEkle",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (sonuc) {
+                    if (sonuc == 0) {
+                        alert("Kayıt başarılı");
+                        location.reload();
+                    } else {
+                        alert("Kayıt sırasında hata oluştu");
+                    }
+                }
+            });
+        }
+
+        function TemizleForm() {
+            $("#UrunID").val('');
+            $("#UrunAdi").val('');
+            $("#Aciklama").val('');
+            $("#Fiyat").val('');
+            $("#KategoriID").val('');
+            $("#Resim").val('');
+        }
+    </script>
+}

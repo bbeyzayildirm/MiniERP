@@ -1,0 +1,73 @@
+﻿@{
+    ViewBag.Title = "Şifremi Unuttum";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Uyum ERP | Şifremi Unuttum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- AdminLTE CSS -->
+    <link rel="stylesheet" href="~/Content/plugins/fontawesome-free/css/all.min.css" />
+    <link rel="stylesheet" href="~/Content/plugins/icheck-bootstrap/icheck-bootstrap.min.css" />
+    <link rel="stylesheet" href="~/Content/dist/css/adminlte.min.css" />
+
+    <style>
+        body.login-page {
+            background-color: #1e2a38 !important;
+        }
+
+        .login-logo img {
+            width: 140px;
+            height: auto;
+        }
+    </style>
+</head>
+<body class="hold-transition login-page">
+    <div class="login-box">
+        <div class="login-logo">
+            <img src="@Url.Content("~/Content/dist/img/uyumerpson.png")" alt="UYUM ERP Logo" />
+        </div>
+
+        <div class="card">
+            <div class="card-body login-card-body">
+                <p class="login-box-msg">Şifre yenileme bağlantısı gönder</p>
+
+                @if (ViewBag.Mesaj != null)
+                {
+                    <div class="alert alert-info">@ViewBag.Mesaj</div>
+                }
+
+                <form method="post" action="/Kullanici/SifremiUnuttum">
+                    <div class="input-group mb-3">
+                        <input type="email" name="email" class="form-control" placeholder="Email adresiniz" required />
+                        <div class="input-group-append">
+                            <div class="input-group-text"><span class="fas fa-envelope"></span></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary btn-block">Yeni Şifre Gönder</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="mt-3 text-center">
+                    <a href="/Giris/Login" style="color: #8c8c8c; ">Giriş sayfasına dön</a>
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AdminLTE JS -->
+    <script src="~/Content/plugins/jquery/jquery.min.js"></script>
+    <script src="~/Content/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/Content/dist/js/adminlte.min.js"></script>
+</body>
+</html>

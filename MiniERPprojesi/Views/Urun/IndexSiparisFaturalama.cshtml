@@ -1,0 +1,62 @@
+﻿@using MiniERPprojesi.Models
+@model List<v_urunler>
+
+@{
+    ViewBag.Title = "Ürünler";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="content-header">
+    <div class="container-fluid">
+        <h2>Ürünler</h2>
+
+        <!-- Kategoriye Göre Filtreleme Formu -->
+        <form method="get" action="/Urun/IndexSiparisFaturalama" class="form-inline mb-3">
+            <div class="form-group mr-3">
+                <label for="kategoriId" class="mr-2 font-weight-bold">Kategori:</label>
+                <select name="kategoriId" id="kategoriId" class="form-control">
+                    <option value="" @(ViewBag.SeciliKategori == null ? "selected" : "")>Tümünü Göster</option>
+                    @foreach (var kategori in ViewBag.Kategoriler as List<SelectListItem>)
+                    {
+                        <option value="@kategori.Value" @(kategori.Value == (ViewBag.SeciliKategori?.ToString() ?? "") ? "selected" : "")>
+                            @kategori.Text
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <button class="btn text-white" style="background-color: #003d80;">Filtrele</button>
+        </form>
+
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            @foreach (var i in Model)
+            {
+                <div class="col-md-4">
+                    <div class="card card-primary">
+                        <div class="card-header bg-info text-white">
+                            <h3 class="card-title">@i.UrunAdi</h3>
+                        </div>
+                        <div class="card-body text-center">
+                            @if (!string.IsNullOrEmpty(i.ResimYolu))
+                            {
+                                <img src="@Url.Content(i.ResimYolu)" class="img-fluid mb-3" style="max-height:200px; object-fit:contain;" alt="@i.UrunAdi" />
+                            }
+                            else
+                            {
+                                <img src="~/Content/Images/no-image.png" class="img-fluid mb-3" style="max-height:200px; object-fit:contain;" alt="Resim yok" />
+                            }
+                            <p><strong>Açıklama:</strong> @i.Aciklama</p>
+                            <p><strong>Fiyat:</strong> @i.Fiyat ₺</p>
+                            <p><strong>Kategori:</strong> @i.KategoriAdi</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>

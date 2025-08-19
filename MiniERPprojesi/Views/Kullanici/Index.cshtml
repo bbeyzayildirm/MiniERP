@@ -1,0 +1,232 @@
+﻿@model List<MiniERPprojesi.Models.Kullanicilar>
+@{
+    ViewBag.Title = "Kullanıcı Yönetimi";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var roller = ViewBag.Roller as List<SelectListItem>;
+}
+
+<h2>Kullanıcılar</h2>
+
+<button class="btn btn-info mb-3" onclick="TemizleForm(); $('#kullaniciModalLabel').text('Yeni Kullanıcı'); $('#kullaniciModal').modal('show');">Yeni Kullanıcı</button>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Ad</th>
+            <th>Soyad</th>
+            <th>Kullanıcı Adı</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Profil Fotoğrafı</th>
+            <th>Sil</th>
+            <th>Güncelle</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var k in Model)
+        {
+            <tr>
+                <td>@k.Ad</td>
+                <td>@k.Soyad</td>
+                <td>@k.KullaniciAdi</td>
+                <td>@k.Email</td>
+                <td>@(k.Roller != null ? k.Roller.RolAdi : "-")</td>
+                <td class="text-center align-middle">
+                    @if (!string.IsNullOrEmpty(k.ProfilFotoUrl))
+                    {
+                        <img src="@k.ProfilFotoUrl" width="80" height="80" class="rounded-circle" />
+                    }
+                    else
+                    {
+                        <span class="text-muted">Yok</span>
+                    }
+                </td>
+                <td><a href="#" class="btn btn-danger silBtn" data-id="@k.KullaniciID">Sil</a></td>
+                <td><a href="#" class="btn btn-warning guncelleBtn" data-id="@k.KullaniciID">Güncelle</a></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Modal -->
+<div class="modal fade" id="kullaniciModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="kullaniciModalLabel">Yeni Kullanıcı</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="kullaniciID" />
+                <div class="form-group">
+                    <label>Kullanıcı Adı</label>
+                    <input type="text" id="kullaniciAdi" class="form-control" />
+                </div>
+                <div class="form-group" id="sifreDiv">
+                    <!-- Şifre alanı sadece yeni kullanıcı için -->
+                    <label>Şifre</label>
+                    <input type="text" id="sifre" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label>Ad</label>
+                    <input type="text" id="ad" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label>Soyad</label>
+                    <input type="text" id="soyad" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label>Rol</label>
+                    <select id="rolID" class="form-control">
+                        <option value="" disabled selected>Rol Seçiniz</option>
+                        @foreach (var item in roller)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Profil Fotoğrafı</label>
+                    <input type="file" id="profilFoto" class="form-control" accept="image/*" />
+                    <div id="profilFotoGoster" class="mt-2"></div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button class="btn btn-success" onclick="KullaniciKaydet()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function TemizleForm() {
+            $("#kullaniciID").val("");
+            $("#kullaniciAdi").val("");
+            $("#sifre").val("");
+            $("#email").val("");
+            $("#ad").val("");
+            $("#soyad").val("");
+            $("#rolID").val("");
+            $("#profilFoto").val("");
+            $("#profilFotoGoster").empty();
+
+            // Yeni kullanıcıda şifre alanı görünür
+            $("#sifreDiv").show();
+        }
+
+        function KullaniciKaydet() {
+            // Önceki hataları temizle
+            $(".is-invalid").removeClass("is-invalid");
+
+            var id = $("#kullaniciID").val();
+            var kullaniciAdi = $("#kullaniciAdi").val().trim();
+            var sifre = $("#sifre").val().trim();
+            var email = $("#email").val().trim();
+            var ad = $("#ad").val().trim();
+            var soyad = $("#soyad").val().trim();
+            var rolID = $("#rolID").val();
+
+            // Boş alan kontrolü
+            var eksik = false;
+            var zorunluAlanlar = ["#kullaniciAdi", "#email", "#ad", "#soyad", "#rolID"];
+            if (!id) zorunluAlanlar.push("#sifre"); // sadece yeni kullanıcıda şifre zorunlu
+
+            zorunluAlanlar.forEach(function (selector) {
+                if ($(selector).val().trim() === "") {
+                    $(selector).addClass("is-invalid");
+                    eksik = true;
+                }
+            });
+
+            if (eksik) {
+                alert("Lütfen tüm zorunlu alanları doldurunuz.");
+                return;
+            }
+
+            // E-posta kontrolü
+            if (email.indexOf("@@") === -1) {
+                alert("Lütfen geçerli bir e-posta adresi giriniz. (örn: ornek@mail.com)");
+                $("#email").focus();
+                return;
+            }
+
+            // FormData ile veri gönder
+            var formData = new FormData();
+            formData.append("KullaniciID", id);
+            formData.append("KullaniciAdi", kullaniciAdi);
+            formData.append("SifreHash", sifre);
+            formData.append("Email", email);
+            formData.append("Ad", ad);
+            formData.append("Soyad", soyad);
+            formData.append("RolID", rolID);
+
+            var fileInput = document.getElementById("profilFoto");
+            if (fileInput.files.length > 0) {
+                formData.append("profilFoto", fileInput.files[0]);
+            }
+
+            $.ajax({
+                url: "/Kullanici/EkleForm",
+                type: "POST",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (sonuc) {
+                    if (sonuc.success === true || sonuc === 0) {
+                        alert("Kayıt başarılı");
+                        location.reload();
+                    } else if (sonuc.message) {
+                        alert("Hata: " + sonuc.message);
+                    } else {
+                        alert("Bilinmeyen bir hata oluştu.");
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Sunucu hatası:", error);
+                    alert("Sunucuya erişilemedi. Lütfen tekrar deneyin.");
+                }
+            });
+        }
+
+
+        $(document).on("click", ".silBtn", function () {
+            if (!confirm("Kullanıcı silinsin mi?")) return;
+            var id = $(this).data("id");
+            $.post("/Kullanici/Sil", { id: id }, function (sonuc) {
+                if (sonuc == 0) location.reload();
+                else alert("Silme hatası");
+            });
+        });
+
+        $(document).on("click", ".guncelleBtn", function () {
+            var id = $(this).data("id");
+            $.get("/Kullanici/Getir", { id: id }, function (k) {
+                $("#kullaniciID").val(k.KullaniciID);
+                $("#kullaniciAdi").val(k.KullaniciAdi);
+                $("#sifre").val(""); // Şifre alanı gösterilmiyor
+                $("#email").val(k.Email);
+                $("#ad").val(k.Ad);
+                $("#soyad").val(k.Soyad);
+                $("#rolID").val(k.RolID);
+
+                $("#profilFoto").val("");
+                $("#profilFotoGoster").empty();
+                if (k.ProfilFotoUrl) {
+                    $("#profilFotoGoster").html(`<img src="${k.ProfilFotoUrl}" width="100" class="rounded" />`);
+                }
+
+                // Güncellemede şifre alanı gizli olsun
+                // $("#sifreDiv").hide();
+
+                $("#kullaniciModalLabel").text("Kullanıcı Güncelle");
+                $("#kullaniciModal").modal("show");
+            });
+        });
+    </script>
+}

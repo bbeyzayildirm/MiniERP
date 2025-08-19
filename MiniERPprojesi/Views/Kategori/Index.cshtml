@@ -1,0 +1,133 @@
+﻿@using MiniERPprojesi.Models
+@model List<Kategoriler>
+
+@{
+    ViewBag.Title = "Kategoriler";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Kategoriler</h2>
+
+<div class="form-inline mb-3">
+    <input type="text" id="kategoriArama" class="form-control form-control-sm" style="min-width: 400px; height: 35px; max-width: 100%; " placeholder="Kategori adı ile ara...">
+</div>
+
+<button class="btn btn-info mb-3" onclick="TemizleForm(); $('#kategoriModalLabel').text('Yeni Kategori Ekle'); $('#kategoriModal').modal('show');">Yeni Kategori Ekle</button>
+
+<table class="table table-bordered table-striped mt-3">
+    <thead>
+        <tr>
+            <th style="width: 200px;">Kategori Adı</th>
+            <th class="text-center" style="width: 90px;">Sil</th>
+            <th class="text-center" style="width: 110px;">Güncelle</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var i in Model)
+        {
+            <tr>
+                <td>@i.KategoriAdi</td>
+                <td class="text-center">
+                    <a href="#" class="btn btn-danger kategoriSil" data-id="@i.KategoriID" data-ad="@i.KategoriAdi">Sil</a>
+                </td>
+                <td class="text-center">
+                    <a href="#" class="btn btn-warning kategoriGuncelle" data-id="@i.KategoriID">Güncelle</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+<!-- Kategori Modal -->
+<div class="modal fade" id="kategoriModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info">
+                <h5 class="modal-title text-white" id="kategoriModalLabel">Kategori</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="kategoriID" />
+                <div class="form-group">
+                    <label>Kategori Adı:</label>
+                    <input type="text" class="form-control" id="kategoriAdi" />
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button class="btn btn-success" onclick="KategoriKaydet()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function TemizleForm() {
+            $("#kategoriID").val("");
+            $("#kategoriAdi").val("");
+        }
+
+        function KategoriKaydet() {
+            var ad = $("#kategoriAdi").val().trim();
+
+            // Boş alan kontrolü
+            if (ad === "") {
+                alert("Lütfen kategori adını giriniz.");
+                $("#kategoriAdi").focus();
+                return;
+            }
+
+
+            var data = {
+                KategoriID: $("#kategoriID").val(),
+                KategoriAdi: $("#kategoriAdi").val()
+            };
+
+            $.post("/Kategori/Ekle", data, function (sonuc) {
+                if (sonuc == 0) {
+                    $("#kategoriModal").modal("hide");
+                    alert("İşlem başarılı");
+                    location.reload();
+                } else {
+                    alert("Hata oluştu");
+                }
+            });
+        }
+
+        $(document).on("click", ".kategoriSil", function () {
+            var id = $(this).data("id");
+            var ad = $(this).data("ad");
+            if (confirm(ad + " isimli kategori silinsin mi?")) {
+                $.post("/Kategori/Sil", { id: id }, function (sonuc) {
+                    if (sonuc == 0) {
+                        alert("Silme başarılı");
+                        location.reload();
+                    } else {
+                        alert("Silme işlemi başarısız");
+                    }
+                });
+            }
+        });
+
+        $(document).on("click", ".kategoriGuncelle", function () {
+            var id = $(this).data("id");
+
+            $.get("/Kategori/Getir", { id: id }, function (k) {
+                $("#kategoriID").val(k.KategoriID);
+                $("#kategoriAdi").val(k.KategoriAdi);
+                $("#kategoriModalLabel").text("Kategori Güncelle");
+                $("#kategoriModal").modal("show");
+            });
+        });
+
+        $("#kategoriArama").on("keyup", function () {
+            var arama = $(this).val().toLowerCase();
+
+            $("table tbody tr").filter(function () {
+                $(this).toggle($(this).find("td:nth-child(2)").text().toLowerCase().indexOf(arama) > -1);
+            });
+        });
+    </script>
+}

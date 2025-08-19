@@ -1,0 +1,365 @@
+﻿@using MiniERPprojesi.Models
+@model List<v_faturalar>
+
+@{
+    ViewBag.Title = "Faturalar";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Faturalar</h2>
+
+<form method="get" action="/Fatura/Index" class="form-inline mb-3">
+    <label class="mr-2">Ödeme Durumu:</label>
+    <select name="odemeDurumu" class="form-control mr-3">
+        <option value="">Tümü</option>
+        <option value="Ödendi" @(ViewBag.SeciliDurum == "Ödendi" ? "selected" : "")>Ödendi</option>
+        <option value="Beklemede" @(ViewBag.SeciliDurum == "Beklemede" ? "selected" : "")>Beklemede</option>
+    </select>
+
+    <label class="mr-2">Başlangıç Tarihi:</label>
+    <input type="date" name="baslangic" class="form-control mr-3" value="@ViewBag.Baslangic" />
+
+    <label class="mr-2">Bitiş Tarihi:</label>
+    <input type="date" name="bitis" class="form-control mr-3" value="@ViewBag.Bitis" />
+
+    <button class="btn text-white" style="background-color: #003d80;">Filtrele</button>
+</form>
+
+<button class="btn btn-info mb-3" data-toggle="modal" data-target="#faturaEkleModal" onclick="TemizleFaturaForm();">Yeni Fatura Ekle</button>
+
+<table class="table table-bordered table-striped mt-3" id="faturaTable">
+    <thead>
+        <tr>
+            <th>Fatura No</th>
+            <th>Fatura Tarihi</th>
+            <th>Sipariş No</th>
+            <th>Toplam Tutar</th>
+            <th style="width: 300px;">Ödeme Durumu</th>
+            <th>Detay</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var f in Model)
+        {
+            <tr>
+                <td>@f.FaturaNo</td>
+                <td>@f.FaturaTarihi.ToString("dd.MM.yyyy")</td>
+                <td>@f.SiparisNo</td>
+                <td>@string.Format("{0:N2} ₺", f.ToplamTutar)</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <select class="form-control form-control-sm" id="odeme_@f.FaturaID" style="width: 150px;">
+                            <option value="Bekliyor" @(f.OdemeDurumu == "Bekliyor" ? "selected" : "")>Bekliyor</option>
+                            <option value="Ödendi" @(f.OdemeDurumu == "Ödendi" ? "selected" : "")>Ödendi</option>
+                        </select>
+                        <a href="#" class="btn btn-warning btn-sm btnOdemeGuncelle ml-2" data-id="@f.FaturaID">Güncelle</a>
+                    </div>
+                </td>
+
+
+
+
+                <td>
+                    <a href="#" class="btn btn-success faturaDetay" data-id="@f.FaturaID">Detay</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Fatura Detay Modal -->
+<div class="modal fade" id="faturaDetayModal" tabindex="-1" role="dialog" aria-labelledby="faturaDetayModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="faturaDetayModalLabel">Fatura Detayları</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Fatura No:</label>
+                        <input type="text" id="txtFaturaNo" class="form-control" readonly />
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Fatura Tarihi:</label>
+                        <input type="text" id="txtFaturaTarihi" class="form-control" readonly />
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Sipariş No:</label>
+                        <input type="text" id="txtFaturaSiparisNo" class="form-control" readonly />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Ödeme Durumu:</label>
+                        <input type="text" id="txtFaturaOdemeDurumu" class="form-control" readonly />
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Müşteri:</label>
+                        <input type="text" id="txtFaturaMusteri" class="form-control" readonly />
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Müşteri Türü:</label>
+                        <input type="text" id="txtFaturaMusteriTuru" class="form-control" readonly />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Email:</label>
+                        <input type="text" id="txtFaturaEmail" class="form-control" readonly />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Adres:</label>
+                    <textarea id="txtFaturaAdres" class="form-control" rows="2" readonly></textarea>
+                </div>
+
+                <label><strong>Ürünler:</strong></label>
+                <table class="table table-sm table-bordered" id="faturaUrunTable">
+                    <thead>
+                        <tr>
+                            <th>Ürün</th>
+                            <th>Adet</th>
+                            <th>Birim Fiyat</th>
+                            <th>Toplam</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fatura Ekle Modal -->
+<div class="modal fade" id="faturaEkleModal" tabindex="-1" role="dialog" aria-labelledby="faturaEkleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="faturaEkleModalLabel">Yeni Fatura Oluştur</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="faturaForm">
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Fatura No:</label>
+                            <input type="text" id="faturaNo" class="form-control" readonly />
+
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Fatura Tarihi:</label>
+                            <input type="text" class="form-control" value="@DateTime.Now.ToString("dd.MM.yyyy")" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Sipariş:</label>
+                            <select id="siparisID" class="form-control">
+                                <option value="">Sipariş Seçiniz</option>
+                                @foreach (var s in ViewBag.Siparisler as List<SelectListItem>)
+                                {
+                                    <option value="@s.Value">@s.Text</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Ödeme Durumu:</label>
+                            <select id="odemeDurumu" class="form-control">
+                                <option value="Bekliyor">Bekliyor</option>
+                                <option value="Ödendi">Ödendi</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Müşteri:</label>
+                            <input type="text" id="ekleMusteriAdi" class="form-control" readonly />
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Müşteri Türü:</label>
+                            <input type="text" id="ekleMusteriTuru" class="form-control" readonly />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Email:</label>
+                            <input type="text" id="ekleEmail" class="form-control" readonly />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Adres:</label>
+                        <textarea id="ekleAdres" class="form-control" rows="2" readonly></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" onclick="FaturaKaydet();">Kaydet</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                    </div>
+                    <label><strong>Ürünler:</strong></label>
+                    <table class="table table-sm table-bordered" id="faturaEkleUrunTable">
+                        <thead>
+                            <tr>
+                                <th>Ürün</th>
+                                <th>Adet</th>
+                                <th>Birim Fiyat</th>
+                                <th>Toplam</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <script>
+        // Fatura Detay Gösterme
+        $(document).on("click", ".faturaDetay", function () {
+            var id = $(this).data("id");
+
+            $.get("/Fatura/FaturaDetayGetir", { id: id }, function (data) {
+                if (data.length === 0) return alert("Detay bulunamadı.");
+
+                var s = data[0];
+
+                // Genel bilgiler
+                $("#txtFaturaNo").val(s.FaturaNo);
+                $("#txtFaturaTarihi").val(new Date(parseInt(s.FaturaTarihi.substr(6))).toLocaleDateString());
+                $("#txtFaturaSiparisNo").val(s.SiparisNo);
+                $("#txtFaturaOdemeDurumu").val(s.OdemeDurumu);
+
+                // Müşteri
+                $("#txtFaturaMusteri").val(s.MusteriAdi);
+                $("#txtFaturaMusteriTuru").val(s.MusteriTuru);
+                $("#txtFaturaEmail").val(s.Email);
+
+                // Adres
+                $("#txtFaturaAdres").val(`${s.Adres} (${s.IlAdi}/${s.IlceAdi})`);
+
+                // Ürünler
+                $("#faturaUrunTable tbody").empty();
+                $.each(data, function (i, urun) {
+                    let toplam = urun.Adet * urun.BirimFiyat;
+                    $("#faturaUrunTable tbody").append(`<tr>
+                                                <td>${urun.UrunAdi}</td>
+                                                <td>${urun.Adet}</td>
+                                                <td>${Number(urun.BirimFiyat).toFixed(2)} ₺</td>
+                                                <td>${toplam.toFixed(2)} ₺</td>
+                                            </tr>`);
+                });
+
+                $("#faturaDetayModal").modal("show");
+            });
+        });
+
+        // Fatura Formunu Temizle
+        function TemizleFaturaForm() {
+            $("#faturaNo").val("");
+            $("#odemeDurumu").val("Bekliyor");
+            $("#siparisID").val("");
+            $("#ekleMusteriAdi").val("");
+            $("#ekleMusteriTuru").val("");
+            $("#ekleEmail").val("");
+            $("#ekleAdres").val("");
+        }
+
+        // Sipariş seçilince müşteri bilgilerini getir
+        $("#siparisID").change(function () {
+            var id = $(this).val();
+            if (!id) return;
+
+            $.get("/Fatura/SiparisGetir", { id: id }, function (s) {
+                if (!s) return;
+
+                // Müşteri bilgileri
+                $("#ekleMusteriAdi").val(s.MusteriAdi);
+                $("#ekleMusteriTuru").val(s.MusteriTuru);
+                $("#ekleEmail").val(s.Email);
+
+                // Adres bilgileri
+                $("#ekleAdres").val(`${s.Adres.Mahalle} Mah. ${s.Adres.Sokak} Sok. No:${s.Adres.BinaNo}/${s.Adres.DaireNo} ${s.Adres.PostaKodu} (${s.Adres.IlAdi}/${s.Adres.IlceAdi})`);
+
+                // Ürünler tablosunu temizle
+                $("#faturaEkleUrunTable tbody").empty();
+
+                // Siparişe ait ürünleri getir
+                $.get("/Siparis/SiparisDetayGetir", { id: id }, function (data) {
+                    if (!data || data.length === 0) return;
+
+                    $.each(data, function (i, urun) {
+                        let toplam = urun.Adet * urun.BirimFiyat;
+                        $("#faturaEkleUrunTable tbody").append(`<tr>
+                                <td>${urun.UrunAdi}</td>
+                                <td>${urun.Adet}</td>
+                                <td>${Number(urun.BirimFiyat).toFixed(2)} ₺</td>
+                                <td>${toplam.toFixed(2)} ₺</td>
+                            </tr>`);
+                    });
+                });
+
+
+            });
+        });
+        function FaturaKaydet() {
+            var veri = {
+
+                SiparisID: $("#siparisID").val(),
+                OdemeDurumu: $("#odemeDurumu").val()
+            };
+
+
+            if (!veri.SiparisID) {
+                alert("Lütfen sipariş seçiniz.");
+                return;
+            }
+
+            $.post("/Fatura/FaturaEkle", veri, function (res) {
+                if (res == 0) {
+                    alert("Fatura başarıyla kaydedildi.");
+                    location.reload();
+                }
+                else if (res == 1) {
+                    alert("Bu sipariş zaten faturalanmış.");
+                }
+                else if (res == 2) {
+                    alert("Bu siparişe ait ürün bulunamadı.");
+                }
+                else {
+                    alert("Fatura kaydedilemedi.");
+                }
+            }).fail(function () {
+                alert("Sunucu hatası oluştu.");
+            });
+        }
+        // Ödeme Durumu Güncelleme
+        $(document).on("click", ".btnOdemeGuncelle", function () {
+            var faturaID = $(this).data("id");
+            var yeniDurum = $("#odeme_" + faturaID).val();
+
+            $.post("/Fatura/OdemeDurumuGuncelle", { id: faturaID, durum: yeniDurum }, function (sonuc) {
+                if (sonuc == 0) {
+                    alert("Ödeme durumu başarıyla güncellendi.");
+                } else {
+                    alert("Güncelleme sırasında hata oluştu.");
+                }
+            }).fail(function () {
+                alert("Sunucu hatası oluştu.");
+            });
+        });
+
+    </script>
+}
+
