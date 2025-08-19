@@ -190,9 +190,11 @@ Bu proje, **Küçük ve Orta Ölçekli İşletmeler** için tasarlanmış, kulla
 ## Teknolojiler
 
 - **Backend:** ASP.NET MVC (C#)
-- **Frontend:** HTML5, CSS3, JavaScript, jQuery, Bootstrap, AdminLTE
-- **Veritabanı:** Microsoft SQL Server (Entity Framework)
+- **ORM:** Entity Framework
+- **Veritabanı:** Microsoft SQL Server
 - **Mimari:** Katmanlı Mimari (Entity, Controller, View)
+- **Frontend:** HTML5, CSS3, JavaScript, jQuery, Bootstrap
+
 
 ---
 
@@ -416,9 +418,10 @@ The system is developed with a modern and responsive interface using the **Admin
 ## Technologies
 
 - **Backend:** ASP.NET MVC (C#)
-- **Frontend:** HTML5, CSS3, JavaScript, jQuery, Bootstrap, AdminLTE
+- **ORM:** Entity Framework
 - **Database:** Microsoft SQL Server (Entity Framework)
 - **Architecture:** Layered Architecture (Entity, Controller, View)
+- **Frontend:** HTML5, CSS3, JavaScript, jQuery, Bootstrap, AdminLTE
 
 ---
 
